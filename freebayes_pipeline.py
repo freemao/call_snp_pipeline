@@ -33,6 +33,24 @@ class FreebayesPipe:
                 self.namelist.append(fn)
                 self.namelist.sort()
 
+    def pre_bwa(self):
+        refq_suffixes = ['fa', 'fasta']
+        index_suffixes = ('amb', 'ann', 'bwt', 'pac', 'sa')
+        all_suffixes = [i.split('.')[-1] for i in self.allnamelist]
+        if set(refq_suffixes) & set(all_suffixes) :
+            print 'Reference sequences file has found.'
+            if set(index_suffixes).issubset(all_suffixes):
+                print 'The index has been built.'
+            else:
+                print "The reference sequence don't build index yet. \
+building..."
+                for i in self.allnamelist:
+                    if i.split('.')[-1] in refq_suffixes:
+                        call(['bwa', 'index', i])
+                        call(['samtools', 'faidx', i])
+        else:
+            print 'No reference sequences found in current directory, \
+please check your files.'
     def runbwafile(self):
         L = range(0, len(self.namelist), 2)
         for i in L:
@@ -66,7 +84,7 @@ class FreebayesPipe:
         for fn in self.allnamelist:
             temp = os.path.join(self.dirname, fn)
             if (os.path.isfile(temp) and fn.split('.')[-1] == 'bam'
-                and 'sorted' not in fn.split('.')):
+                and not set(['sorted', 'rmp', 'rg']) & set(fn.split('.')) ):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
@@ -82,8 +100,9 @@ class FreebayesPipe:
     def getsortfilelist(self):
         for fn in self.allnamelist:
             temp = os.path.join(self.dirname, fn)
-            if (os.path.isfile(temp) and fn.split('.')[-1] == 'bam'
-                and fn.split('.')[-2] == 'sorted'):
+            if (os.path.isfile(temp)
+                and fn.split('.')[-2:] == ['sorted', 'bam']
+                and not set(['rmp', 'rg']) & set(fn.split('.')) ):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
@@ -99,9 +118,9 @@ class FreebayesPipe:
     def getrmpfilelist(self):
         for fn in self.allnamelist:
             temp = os.path.join(self.dirname, fn)
-            if (os.path.isfile(temp) and fn.split('.')[-1] == 'bam'
-                and fn.split('.')[-2] == 'rmp'
-                and fn.split('.')[-3] == 'sorted'):
+            if (os.path.isfile(temp)
+                and fn.split('.')[-3:] == ['sorted', 'rmp', 'bam']
+                and 'rg' not in fn.split('.')):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
@@ -119,8 +138,8 @@ class FreebayesPipe:
         for fn in self.allnamelist:
             seg = fn.split('.')
             temp = os.path.join(self.dirname, fn)
-            if (os.path.isfile(temp) and seg[-1] == 'bam' and seg[-2] == 'rg'
-                and seg[-3] == 'rmp' and seg[-4] == 'sorted'):
+            if (os.path.isfile(temp)
+                and seg[-4:] == ['sorted', 'rmp', 'rg', 'bam']):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
@@ -152,6 +171,7 @@ if __name__ == '__main__':
     step2 = FreebayesPipe('.')
     step2.getfqfilelist()
     print step2.namelist
+    step2.pre_bwa()
     step2.runbwafile()
     call('parallel < run_bwa.txt', shell = True)
 
