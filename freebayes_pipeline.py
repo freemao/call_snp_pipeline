@@ -51,6 +51,7 @@ building..."
         else:
             print 'No reference sequences found in current directory, \
 please check your files.'
+
     def runbwafile(self):
         L = range(0, len(self.namelist), 2)
         for i in L:
