@@ -161,6 +161,13 @@ please check your files.'
             f0.write('freebayes -f Osativa_204.fa ' + x + ' > ' + y + '\n')
         f0.close()
 
+    def getvcffilelist(self):
+        for fn in self.allnamelist:
+            temp = os.path.join(self.dirname, fn)
+            if (os.path.isfile(temp) and fn.split('.')[-1] == 'vcf'):
+                self.namelist.append(fn)
+                self.namelist.sort()
+
 if __name__ == '__main__':
     step1 = FreebayesPipe('.')
     step1.getgzfilelist()
