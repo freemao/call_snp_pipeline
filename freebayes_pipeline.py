@@ -55,13 +55,13 @@ please check your files.'
     def runbwafile(self):
         L = range(0, len(self.namelist), 2)
         for i in L:
-            sam_prefix = self.namelist[i].split('_')[0]
+            sam_prefix = '_'.join(self.namelist[i].split('_')[:-1])
             self.arg1.append(self.namelist[i])
             self.arg2.append(self.namelist[i+1])
             self.arg3.append(sam_prefix+'.sam')
         f0 = open('run_bwa.txt', 'w')
         for x, y, z in zip(self.arg1, self.arg2, self.arg3):
-            f0.write('bwa mem -t 40 Osativa_204.fa ' + x + ' '+y + ' > '\
+            f0.write('bwa mem -t 40 RAP_cDAN.fasta ' + x + ' '+y + ' > '\
  + z + '\n')
         f0.close()
 
@@ -128,11 +128,11 @@ please check your files.'
     def runaddrgfile(self):
         for i in self.namelist:
             self.arg1.append(i)
-            self.arg2.append(i.split('.')[0])
+            rg_name = i.split('-')[0][1:]
             self.arg3.append(i.split('.')[0] + '.sorted.rmp.rg.bam')
         f0 = open('run_addrg.txt', 'w')
-        for x, y, z in zip(self.arg1, self.arg2, self.arg3):
-            f0.write('bamaddrg -b ' + x + ' -s ' + y + ' > ' + z + '\n')
+        for x, y in zip(self.arg1, self.arg3):
+            f0.write('bamaddrg -b ' + x + ' -s ' + rg_name + ' > ' + y + '\n')
         f0.close()
 
     def getrgfilelist(self):
@@ -153,20 +153,48 @@ please check your files.'
         f0.close()
 
     def runfreebayesfile(self):
+        f0 = open('bamfile.list', 'w')
+        vcfname = set()
         for i in self.namelist:
-            self.arg1.append(i)
-            self.arg2.append(i.split('.')[0] + '.vcf')
-        f0 = open('run_freebayes.txt', 'w')
-        for x, y in zip(self.arg1, self.arg2):
-            f0.write('freebayes -f Osativa_204.fa ' + x + ' > ' + y + '\n')
+            j = i.split('-')[0][1:]
+            vcfname.add(j)
+            f0.write(i+'\n')
         f0.close()
+        f1 = open('run_freebayes.sh', 'w')
+        if len(vcfname) == 1:
+            f1.write('freebayes -f RAP_cDAN.fasta -F 0.1 -L bamfile.list > ' + j + '.vcf')
+        else:
+            print 'the vcf file name is not unique! check your files please.'
+        f1.close()
+        call('chmod 777 run_freebayes.sh', shell = True)
+        call('./run_freebayes.sh', shell = True)
 
     def getvcffilelist(self):
         for fn in self.allnamelist:
             temp = os.path.join(self.dirname, fn)
-            if (os.path.isfile(temp) and fn.split('.')[-1] == 'vcf'):
+            if (os.path.isfile(temp) and fn.split('.')[-1] == 'vcf'
+                and 'filtered' not in fn.split('.') ):
                 self.namelist.append(fn)
                 self.namelist.sort()
+
+    def runfilterfile(self):
+        for i in self.namelist:
+            f0 = open(i, 'r')
+            filtername = i.split('.')[0]+'.filtered.vcf'
+            f1 = open(filtername, 'w')
+                for i in f0:
+                    if i.startswith('#'):
+                    print i
+                    f1.write(i)
+                    else:
+                        j = i.split()
+                        if (float(j[5]) > 30 and j[7].split('=')[-1] == 'snp'
+                            and int(j[9].split(':')[1]) > 10) :
+                            f1.write(i)
+            f0.close()
+            f1.close()
+
+
 
 if __name__ == '__main__':
     step1 = FreebayesPipe('.')
@@ -212,6 +240,5 @@ if __name__ == '__main__':
     print step7.namelist
     step7.runbaifile()
     call('parallel < run_bai.txt', shell = True)
-    step7.runfreebayesfile()
-    call('parallel < run_freebayes.txt', shell = True)
+#    step7.runfreebayes()
 
