@@ -7,6 +7,10 @@ from freebayes_pipeline import FreebayesPipe
 #print ob1.namelist
 #ob1.runfreebayesfile()
 
-ob2 = FreebayesPipe('.')
-ob2.getvcffilelist()
-ob2.runfilterfile()
+#ob2 = FreebayesPipe('.')
+#ob2.getvcffilelist()
+#ob2.runfilterfile()
+
+ob3 = FreebayesPipe('.')
+ob3.getfilteredlist()
+ob3.basic_statistic()

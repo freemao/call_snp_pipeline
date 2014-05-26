@@ -182,18 +182,48 @@ please check your files.'
             f0 = open(i, 'r')
             filtername = i.split('.')[0]+'.filtered.vcf'
             f1 = open(filtername, 'w')
-                for i in f0:
-                    if i.startswith('#'):
-                    print i
+            for i in f0:
+                if i.startswith('#'):
                     f1.write(i)
-                    else:
-                        j = i.split()
-                        if (float(j[5]) > 30 and j[7].split('=')[-1] == 'snp'
-                            and int(j[9].split(':')[1]) > 10) :
-                            f1.write(i)
+                else:
+                    j = i.split()
+                    if (float(j[5]) > 30 and j[7].split('=')[-1] == 'snp'
+                        and int(j[9].split(':')[1]) > 10) :
+                        f1.write(i)
             f0.close()
             f1.close()
+    def getfilteredlist(self):
+        for fn in self.allnamelist:
+            temp = os.path.join(self.dirname, fn)
+            if (os.path.isfile(temp) and fn.split('.')[1:] == ['filtered','vcf']):
+                self.namelist.append(fn)
+                self.namelist.sort()
 
+    def basic_statistic(self):
+        for fn in self.namelist:
+            f0 = open(fn, 'r')
+            total = 0
+            zerzer = 0
+            zerone = 0
+            oneone = 0
+            others = 0
+            for i in f0:
+                if i.startswith('#'):
+                    pass
+                else:
+                    total += 1
+                    j = i.split()[9].split(':')[0]
+                    if j == '0/0':
+                        zerzer += 1
+                    elif j == '0/1':
+                        zerone += 1
+                    elif j == '1/1':
+                        oneone += 1
+                    else:
+                        others += 1
+            f0.close()
+            print fn.split('.')[0]
+            print 'total:%d zerzer:%d zerone:%d oneone:%d others:%d'%(total,zerzer,zerone,oneone,others)
 
 
 if __name__ == '__main__':
