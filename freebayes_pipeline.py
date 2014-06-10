@@ -11,6 +11,7 @@ class FreebayesPipe:
         self.arg1 = []
         self.arg2 = []
         self.arg3 = []
+        self.arg4 = []
 
     def getgzfilelist(self):
         for fn in self.allnamelist:
@@ -54,15 +55,24 @@ please check your files.'
 
     def runbwafile(self):
         L = range(0, len(self.namelist), 2)
+        lib = 1
         for i in L:
+            ID = 'flowcell1.lane' + \
+self.namelist[i].split('00')[-1].split('_')[0]
+            PL = 'illumina'
+            LB = 'lib' + str(lib)
+            lib += 1
+            SM = self.namelist[i].split('-')[0][1:]
+            R = r"'@RG\tID:%s\tSM:%s\tPL:%s\tLB:%s'"%(ID, SM, PL, LB)
             sam_prefix = '_'.join(self.namelist[i].split('_')[:-1])
             self.arg1.append(self.namelist[i])
             self.arg2.append(self.namelist[i+1])
             self.arg3.append(sam_prefix+'.sam')
+            self.arg4.append(R)
         f0 = open('run_bwa.txt', 'w')
-        for x, y, z in zip(self.arg1, self.arg2, self.arg3):
-            f0.write('bwa mem -t 40 RAP_cDAN.fasta ' + x + ' '+y + ' > '\
- + z + '\n')
+        for x, y, z, w in zip(self.arg1, self.arg2, self.arg3, self.arg4):
+            f0.write('bwa mem -t 40 -R ' + w + ' Osativa_204.fa ' \
++ x + ' '+y + ' > ' + z + '\n')
         f0.close()
 
     def getsamfilelist(self):
@@ -144,6 +154,15 @@ please check your files.'
                 self.namelist.append(fn)
                 self.namelist.sort()
 
+    def getrecalfilelist(self):
+        for fn in self.allnamelist:
+            seg = fn.split('.')
+            temp = os.path.join(self.dirname, fn)
+            if (os.path.isfile(temp)
+                and seg[1:] == ['sorted','rmp','rg','recal', 'bam']):
+                self.namelist.append(fn)
+                self.namelist.sort()
+
     def runbaifile(self):
         for i in self.namelist:
             self.arg1.append(i)
@@ -153,7 +172,7 @@ please check your files.'
         f0.close()
 
     def runfreebayesfile(self):
-        f0 = open('bamfile.list', 'w')
+        f0 = open('bamfile.fb.list', 'w')
         vcfname = set()
         for i in self.namelist:
             j = i.split('-')[0][1:]
@@ -162,12 +181,29 @@ please check your files.'
         f0.close()
         f1 = open('run_freebayes.sh', 'w')
         if len(vcfname) == 1:
-            f1.write('freebayes -f RAP_cDAN.fasta -F 0.1 -L bamfile.list > ' + j + '.vcf')
+            f1.write('freebayes -f Osativa_204.fa -F 0.1 -L bamfile.list > ' + j
++ '.fb.vcf')
         else:
             print 'the vcf file name is not unique! check your files please.'
         f1.close()
-        call('chmod 777 run_freebayes.sh', shell = True)
-        call('./run_freebayes.sh', shell = True)
+
+    def runsambamfile(self):
+        f0 = open('bamfile.sb.list', 'w')
+        vcfname = set()
+        for i in self.namelist:
+            j = i.split('-')[0][1:]
+            vcfname.add(j)
+            f0.write(i+'\n')
+        f0.close()
+        f1 = open('run_samtools1.sh', 'w')
+        f2 = open('run_bcftools2.sh', 'w')
+        if len(vcfname) == 1:
+            f1.write('samtools mpileup -f Osativa_204.fa -P ILLUMINA -EgD -b bamfile.sb.list > ' + j + '.sb.bcf')
+            f2.write('bcftools view -cNegv ' + j + '.sb.bcf' + ' > ' + j + '.sb.vcf')
+        else:
+            print 'the vcf file name is not unique! check your files please.'
+        f1.close()
+
 
     def getvcffilelist(self):
         for fn in self.allnamelist:
@@ -177,98 +213,127 @@ please check your files.'
                 self.namelist.append(fn)
                 self.namelist.sort()
 
-    def runfilterfile(self):
+    def runFBfilterfile(self):
         for i in self.namelist:
             f0 = open(i, 'r')
-            filtername = i.split('.')[0]+'.filtered.vcf'
+            filtername = '.'.join(i.split('.')[0:-1])+'.filtered.vcf'
             f1 = open(filtername, 'w')
             for i in f0:
                 if i.startswith('#'):
                     f1.write(i)
                 else:
                     j = i.split()
-                    if (float(j[5]) > 30 and j[7].split('=')[-1] == 'snp'
+                    if (float(j[5]) > 30 and j[7].split(';')[-2].split('=')[-1] == 'snp'
                         and int(j[9].split(':')[1]) > 10) :
                         f1.write(i)
             f0.close()
             f1.close()
+    def runGATKfilterfile(self):
+        for i in self.namelist:
+            f0 = open(i, 'r')
+            filtername = '.'.join(i.split('.')[0:-1])+'.filtered.vcf'
+            f1 = open(filtername, 'w')
+            for i in f0:
+                if i.startswith('#'):
+                    f1.write(i)
+                else:
+                    j = i.split()
+                    ref = j[3]
+                    alt = j[4]
+                    info = j[8].split(':')
+                    if (float(j[5]) > 30 and len(ref) ==1 and len(alt) == 1
+                        and len(info) == 5 and int(j[9].split(':')[2]) > 10):
+                        f1.write(i)
+            f0.close()
+            f1.close()
+
+    def runSTfilterfile(self):
+        for i in self.namelist:
+            f0 = open(i, 'r')
+            filtername = '.'.join(i.split('.')[0:-1])+'.filtered.vcf'
+            f1 = open(filtername, 'w')
+            for i in f0:
+                if i.startswith('#'):
+                    f1.write(i)
+                else:
+                    j = i.split()
+                    ref = j[3]
+                    alt = j[4]
+                    info = j[8].split(':')
+                    if (float(j[5]) > 30 and len(ref) ==1 and len(alt) == 1
+                        and int(j[9].split(':')[2]) > 5):
+                        f1.write(i)
+            f0.close()
+            f1.close()
+
     def getfilteredlist(self):
         for fn in self.allnamelist:
             temp = os.path.join(self.dirname, fn)
-            if (os.path.isfile(temp) and fn.split('.')[1:] == ['filtered','vcf']):
+            if (os.path.isfile(temp) and fn.split('.')[-2:] == ['filtered','vcf']):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
-    def basic_statistic(self):
-        for fn in self.namelist:
-            f0 = open(fn, 'r')
-            total = 0
-            zerzer = 0
-            zerone = 0
-            oneone = 0
-            others = 0
-            for i in f0:
-                if i.startswith('#'):
-                    pass
-                else:
-                    total += 1
-                    j = i.split()[9].split(':')[0]
-                    if j == '0/0':
-                        zerzer += 1
-                    elif j == '0/1':
-                        zerone += 1
-                    elif j == '1/1':
-                        oneone += 1
-                    else:
-                        others += 1
-            f0.close()
-            print fn.split('.')[0]
-            print 'total:%d zerzer:%d zerone:%d oneone:%d others:%d'%(total,zerzer,zerone,oneone,others)
-
 
 if __name__ == '__main__':
-    step1 = FreebayesPipe('.')
-    step1.getgzfilelist()
-    if step1.namelist:
-        print step1.namelist
-        step1.rungzfile()
-        call('parallel < run_gz.txt', shell = True)
+#    step1 = FreebayesPipe('.')
+#    step1.getgzfilelist()
+#    if step1.namelist:
+#        print step1.namelist
+#        step1.rungzfile()
+#        call('parallel < run_gz.txt', shell = True)
 
-    step2 = FreebayesPipe('.')
-    step2.getfqfilelist()
-    print step2.namelist
-    step2.pre_bwa()
-    step2.runbwafile()
-    call('parallel < run_bwa.txt', shell = True)
+#    step2 = FreebayesPipe('.')
+#    step2.getfqfilelist()
+#    print step2.namelist
+#    step2.pre_bwa()
+#    step2.runbwafile()
+#    call('parallel < run_bwa.txt', shell = True)
 
-    step3 = FreebayesPipe('.')
-    step3.getsamfilelist()
-    print step3.namelist
-    step3.runsam2bamfile()
-    call('parallel < run_sam2bam.txt', shell = True)
+#    step3 = FreebayesPipe('.')
+#    step3.getsamfilelist()
+#    print step3.namelist
+#    step3.runsam2bamfile()
+#    call('parallel < run_sam2bam.txt', shell = True)
 
-    step4 = FreebayesPipe('.')
-    step4.getbamfilelist()
-    print step4.namelist
-    step4.runsortfile()
-    call('parallel < run_sort.txt', shell = True)
+#    step4 = FreebayesPipe('.')
+#    step4.getbamfilelist()
+#    print step4.namelist
+#    step4.runsortfile()
+#    call('parallel < run_sort.txt', shell = True)
 
-    step5 = FreebayesPipe('.')
-    step5.getsortfilelist()
-    print step5.namelist
-    step5.runrmdupfile()
-    call('parallel < run_rmp.txt', shell = True)
+#    step5 = FreebayesPipe('.')
+#    step5.getsortfilelist()
+#    print step5.namelist
+#    step5.runrmdupfile()
+#    call('parallel < run_rmp.txt', shell = True)
 
-    step6 = FreebayesPipe('.')
-    step6.getrmpfilelist()
-    print step6.namelist
-    step6.runaddrgfile()
-    call('parallel < run_addrg.txt', shell = True)
+#    step6 = FreebayesPipe('.')
+#    step6.getrmpfilelist()
+#    print step6.namelist
+#    step6.runaddrgfile()
+#    call('parallel < run_addrg.txt', shell = True)
 
-    step7 = FreebayesPipe('.')
-    step7.getrgfilelist()
-    print step7.namelist
-    step7.runbaifile()
-    call('parallel < run_bai.txt', shell = True)
-#    step7.runfreebayes()
+#    step7 = FreebayesPipe('.')
+#    step7.getrgfilelist()
+#    print step7.namelist
+#    step7.runbaifile()
+#    call('parallel < run_bai.txt', shell = True)
+#    step7.runsambamfile()
+#    call('chmod 777 run_bcftools2.sh', shell = True)
+#    call('chmod 777 run_samtools1.sh', shell = True)
+#    call('./run_samtools1.sh', shell = True)
+#    call('./run_bcftools2.sh', shell = True)
+
+#    step8 = FreebayesPipe('.')
+#    step8.getvcffilelist()
+#    step8.basic_statistic()
+
+    step9 = FreebayesPipe('.')
+#    step9.runSTfilterfile()
+    step9.getfilteredlist()
+    print step9.namelist
+    step9.basic_statistic()
+
+
+
 
