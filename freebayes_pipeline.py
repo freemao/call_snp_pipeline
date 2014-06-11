@@ -48,7 +48,6 @@ building..."
                 for i in self.allnamelist:
                     if i.split('.')[-1] in refq_suffixes:
                         call(['bwa', 'index', i])
-                        call(['samtools', 'faidx', i])
         else:
             print 'No reference sequences found in current directory, \
 please check your files.'
@@ -177,102 +176,73 @@ self.namelist[i].split('00')[-1].split('_')[0]
         for i in self.namelist:
             j = i.split('-')[0][1:]
             vcfname.add(j)
-            f0.write(i+'\n')
+            f0.write(i + '\n')
         f0.close()
         f1 = open('run_freebayes.sh', 'w')
         if len(vcfname) == 1:
-            f1.write('freebayes -f Osativa_204.fa -F 0.1 -L bamfile.list > ' + j
-+ '.fb.vcf')
+            f1.write('freebayes -f Osativa_204.fa -F 0.1 -L bamfile.list > ' \
++ j + '.fb.vcf')
         else:
             print 'the vcf file name is not unique! check your files please.'
         f1.close()
 
-    def runsambamfile(self):
+    def runsambcffile(self):
         f0 = open('bamfile.sb.list', 'w')
         vcfname = set()
         for i in self.namelist:
             j = i.split('-')[0][1:]
             vcfname.add(j)
-            f0.write(i+'\n')
+            f0.write(i + '\n')
         f0.close()
         f1 = open('run_samtools1.sh', 'w')
         f2 = open('run_bcftools2.sh', 'w')
         if len(vcfname) == 1:
-            f1.write('samtools mpileup -f Osativa_204.fa -P ILLUMINA -EgD -b bamfile.sb.list > ' + j + '.sb.bcf')
-            f2.write('bcftools view -cNegv ' + j + '.sb.bcf' + ' > ' + j + '.sb.vcf')
+            f1.write('samtools mpileup -f Osativa_204.fa -P ILLUMINA -EgD -b \
+bamfile.sb.list > ' + j + '.sb.bcf')
+            f2.write('bcftools view -cNegv ' + j + '.sb.bcf' + ' > ' + j + \
+'.sb.vcf')
         else:
             print 'the vcf file name is not unique! check your files please.'
         f1.close()
 
+    def pre_ref(self):
+        refq_suffixes = ['fa', 'fasta']
+        all_suffixes = [i.split('.')[-1] for i in self.allnamelist]
+        if set(refq_suffixes) & set(all_suffixes) :
+            print 'Reference sequences file has found.'
+            for i in self.allnamelist:
+                if i.split('.')[-1] in refq_suffixes:
+                    ref = i
+            if 'fai' not in all_suffixes:
+                call(['samtools', 'faidx', ref])
+            elif 'dict' not in all_suffixes:
+                call(['java', '-jar', '/share/Public/cmiao/picard-tools-1.112\
+/CreateSequenceDictionary.jar', 'R=' + ref, 'O=' + ref.split('.')[0] + \
+'.dict'])
+            else:
+                print 'All the dependencies have prepared.'
+        else:
+            print 'Reference sequence file is not exist.'
 
-    def getvcffilelist(self):
-        for fn in self.allnamelist:
-            temp = os.path.join(self.dirname, fn)
-            if (os.path.isfile(temp) and fn.split('.')[-1] == 'vcf'
-                and 'filtered' not in fn.split('.') ):
-                self.namelist.append(fn)
-                self.namelist.sort()
-
-    def runFBfilterfile(self):
+    def runGATKfile(self):
+        filenames = []
+        vcfname = set()
         for i in self.namelist:
-            f0 = open(i, 'r')
-            filtername = '.'.join(i.split('.')[0:-1])+'.filtered.vcf'
-            f1 = open(filtername, 'w')
-            for i in f0:
-                if i.startswith('#'):
-                    f1.write(i)
-                else:
-                    j = i.split()
-                    if (float(j[5]) > 30 and j[7].split(';')[-2].split('=')[-1] == 'snp'
-                        and int(j[9].split(':')[1]) > 10) :
-                        f1.write(i)
-            f0.close()
-            f1.close()
-    def runGATKfilterfile(self):
-        for i in self.namelist:
-            f0 = open(i, 'r')
-            filtername = '.'.join(i.split('.')[0:-1])+'.filtered.vcf'
-            f1 = open(filtername, 'w')
-            for i in f0:
-                if i.startswith('#'):
-                    f1.write(i)
-                else:
-                    j = i.split()
-                    ref = j[3]
-                    alt = j[4]
-                    info = j[8].split(':')
-                    if (float(j[5]) > 30 and len(ref) ==1 and len(alt) == 1
-                        and len(info) == 5 and int(j[9].split(':')[2]) > 10):
-                        f1.write(i)
-            f0.close()
-            f1.close()
-
-    def runSTfilterfile(self):
-        for i in self.namelist:
-            f0 = open(i, 'r')
-            filtername = '.'.join(i.split('.')[0:-1])+'.filtered.vcf'
-            f1 = open(filtername, 'w')
-            for i in f0:
-                if i.startswith('#'):
-                    f1.write(i)
-                else:
-                    j = i.split()
-                    ref = j[3]
-                    alt = j[4]
-                    info = j[8].split(':')
-                    if (float(j[5]) > 30 and len(ref) ==1 and len(alt) == 1
-                        and int(j[9].split(':')[2]) > 5):
-                        f1.write(i)
-            f0.close()
-            f1.close()
-
-    def getfilteredlist(self):
-        for fn in self.allnamelist:
-            temp = os.path.join(self.dirname, fn)
-            if (os.path.isfile(temp) and fn.split('.')[-2:] == ['filtered','vcf']):
-                self.namelist.append(fn)
-                self.namelist.sort()
-
+            j = i.split('-')[0][1:]
+            vcfname.add(j)
+            filenames.append(i)
+        addI = []
+        for i in filenames:
+            addI.append(' -I ' + i)
+        filearg = ''.join(addI)
+        f1 = open('run_gatk.sh', 'w')
+        if len(vcfname) == 1:
+            f1.write('java -jar /share/Public/cmiao/GATK_tools/\
+GenomeAnalysisTK.jar -nct 30 -T HaplotypeCaller -R Osativa_204.fa' + \
+filearg + ' -o ' + j +'.gatk.vcf')
+        else:
+            print 'the vcf file name is not unique! check your files please.'
+        f1.close()
 
 if __name__ == '__main__':
 #    step1 = FreebayesPipe('.')
@@ -324,16 +294,10 @@ if __name__ == '__main__':
 #    call('./run_samtools1.sh', shell = True)
 #    call('./run_bcftools2.sh', shell = True)
 
-#    step8 = FreebayesPipe('.')
-#    step8.getvcffilelist()
-#    step8.basic_statistic()
-
-    step9 = FreebayesPipe('.')
-#    step9.runSTfilterfile()
-    step9.getfilteredlist()
-    print step9.namelist
-    step9.basic_statistic()
-
-
-
-
+    step8 = FreebayesPipe('.')
+    step8.pre_ref()
+    step8.getrgfilelist()
+    print step8.namelist
+    step8.runGATKfile()
+    call('chmod 777 run_gatk.sh', shell = True)
+    call('./run_gatk.sh', shell = True)
