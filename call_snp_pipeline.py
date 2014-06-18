@@ -191,62 +191,7 @@ self.namelist[i].split('00')[-1].split('_')[0]
         else:
             print 'Reference sequence file is not exist.'
 
-    def runfreebayesfile(self):
-        f0 = open('bamfile.fb.list', 'w')
-        vcfname = set()
-        for i in self.namelist:
-            j = i.split('-')[0][1:]
-            vcfname.add(j)
-            f0.write(i + '\n')
-        f0.close()
-        f1 = open('run_freebayes.sh', 'w')
-        if len(vcfname) == 1:
-            f1.write('freebayes -f Osativa_204.fa -F 0.1 -L bamfile.fb.list > ' \
-+ j + '.fb.vcf')
-        else:
-            print 'the vcf file name is not unique! check your files please.'
-        f1.close()
-
-    def runsambcffile(self):
-        f0 = open('bamfile.sb.list', 'w')
-        vcfname = set()
-        for i in self.namelist:
-            j = i.split('-')[0][1:]
-            vcfname.add(j)
-            f0.write(i + '\n')
-        f0.close()
-        f1 = open('run_samtools1.sh', 'w')
-        f2 = open('run_bcftools2.sh', 'w')
-        if len(vcfname) == 1:
-            f1.write('samtools mpileup -f Osativa_204.fa -P ILLUMINA -EgD -b \
-bamfile.sb.list > ' + j + '.sb.bcf')
-            f2.write('bcftools view -cNegv ' + j + '.sb.bcf' + ' > ' + j + \
-'.sb.vcf')
-        else:
-            print 'the vcf file name is not unique! check your files please.'
-        f1.close()
-
-    def runGATKfile(self):
-        filenames = []
-        vcfname = set()
-        for i in self.namelist:
-            j = i.split('-')[0][1:]
-            vcfname.add(j)
-            filenames.append(i)
-        addI = []
-        for i in filenames:
-            addI.append(' -I ' + i)
-        filearg = ''.join(addI)
-        f1 = open('run_gatk.sh', 'w')
-        if len(vcfname) == 1:
-            f1.write('java -jar /share/Public/cmiao/GATK_tools/\
-GenomeAnalysisTK.jar -nct 30 -T HaplotypeCaller -R Osativa_204.fa' + \
-filearg + ' -o ' + j +'.gatk.vcf')
-        else:
-            print 'the vcf file name is not unique! check your files please.'
-        f1.close()
-
-if __name__ == '__main__':
+#if __name__ == '__main__':
 #    step1 = FreebayesPipe('.')
 #    step1.getgzfilelist()
 #    if step1.namelist:
@@ -285,24 +230,8 @@ if __name__ == '__main__':
 #    step6.runaddrgfile()
 #    call('parallel < run_addrg.txt', shell = True)
 
-    step7 = FreebayesPipe('.')
-    step7.getrmpfilelist()
-    print step7.namelist
+#    step7 = FreebayesPipe('.')
+#    step7.getrmpfilelist()
+#    print step7.namelist
 #    step7.runbaifile()
 #    call('parallel < run_bai.txt', shell = True)
-    step7.runsambcffile()
-    call('chmod 777 run_samtools1.sh', shell = True)
-    call('chmod 777 run_bcftools2.sh', shell = True)
-    call('./run_samtools1.sh', shell = True)
-    call('./run_bcftools2.sh', shell = True)
-
-#    step.runGATKfile()
-#    call('chmod 777 run_gatk.sh', shell = True)
-#    call('./run_gatk.sh', shell = True)
-
-step6 = FreebayesPipe('.')
-step6.getrmpfilelist()
-print step6.namelist
-step6.runGATKfile()
-call('chmod 777 run_gatk.sh', shell = True)
-call('./run_gatk.sh', shell = True)
