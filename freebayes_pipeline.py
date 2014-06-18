@@ -170,6 +170,27 @@ self.namelist[i].split('00')[-1].split('_')[0]
             f0.write('samtools index ' + x + '\n')
         f0.close()
 
+    def pre_ref(self):
+        refq_suffixes = ['fa', 'fasta']
+        all_suffixes = [i.split('.')[-1] for i in self.allnamelist]
+        if set(refq_suffixes) & set(all_suffixes) :
+            print 'Reference sequences file has found.'
+            for i in self.allnamelist:
+                if i.split('.')[-1] in refq_suffixes:
+                    ref = i
+            if 'fai' not in all_suffixes:
+                call(['samtools', 'faidx', ref])
+                print 'faidx already'
+            elif 'dict' not in all_suffixes:
+                call(['java', '-jar', '/share/Public/cmiao/picard-tools-1.112\
+/CreateSequenceDictionary.jar', 'R=' + ref, 'O=' + ref.split('.')[0] + \
+'.dict'])
+                print 'dict already'
+            else:
+                print 'All the dependencies have prepared.'
+        else:
+            print 'Reference sequence file is not exist.'
+
     def runfreebayesfile(self):
         f0 = open('bamfile.fb.list', 'w')
         vcfname = set()
@@ -180,7 +201,7 @@ self.namelist[i].split('00')[-1].split('_')[0]
         f0.close()
         f1 = open('run_freebayes.sh', 'w')
         if len(vcfname) == 1:
-            f1.write('freebayes -f Osativa_204.fa -F 0.1 -L bamfile.list > ' \
+            f1.write('freebayes -f Osativa_204.fa -F 0.1 -L bamfile.fb.list > ' \
 + j + '.fb.vcf')
         else:
             print 'the vcf file name is not unique! check your files please.'
@@ -204,25 +225,6 @@ bamfile.sb.list > ' + j + '.sb.bcf')
         else:
             print 'the vcf file name is not unique! check your files please.'
         f1.close()
-
-    def pre_ref(self):
-        refq_suffixes = ['fa', 'fasta']
-        all_suffixes = [i.split('.')[-1] for i in self.allnamelist]
-        if set(refq_suffixes) & set(all_suffixes) :
-            print 'Reference sequences file has found.'
-            for i in self.allnamelist:
-                if i.split('.')[-1] in refq_suffixes:
-                    ref = i
-            if 'fai' not in all_suffixes:
-                call(['samtools', 'faidx', ref])
-            elif 'dict' not in all_suffixes:
-                call(['java', '-jar', '/share/Public/cmiao/picard-tools-1.112\
-/CreateSequenceDictionary.jar', 'R=' + ref, 'O=' + ref.split('.')[0] + \
-'.dict'])
-            else:
-                print 'All the dependencies have prepared.'
-        else:
-            print 'Reference sequence file is not exist.'
 
     def runGATKfile(self):
         filenames = []
@@ -283,21 +285,24 @@ if __name__ == '__main__':
 #    step6.runaddrgfile()
 #    call('parallel < run_addrg.txt', shell = True)
 
-#    step7 = FreebayesPipe('.')
-#    step7.getrgfilelist()
-#    print step7.namelist
+    step7 = FreebayesPipe('.')
+    step7.getrmpfilelist()
+    print step7.namelist
 #    step7.runbaifile()
 #    call('parallel < run_bai.txt', shell = True)
-#    step7.runsambamfile()
-#    call('chmod 777 run_bcftools2.sh', shell = True)
-#    call('chmod 777 run_samtools1.sh', shell = True)
-#    call('./run_samtools1.sh', shell = True)
-#    call('./run_bcftools2.sh', shell = True)
+    step7.runsambcffile()
+    call('chmod 777 run_samtools1.sh', shell = True)
+    call('chmod 777 run_bcftools2.sh', shell = True)
+    call('./run_samtools1.sh', shell = True)
+    call('./run_bcftools2.sh', shell = True)
 
-    step8 = FreebayesPipe('.')
-    step8.pre_ref()
-    step8.getrgfilelist()
-    print step8.namelist
-    step8.runGATKfile()
-    call('chmod 777 run_gatk.sh', shell = True)
-    call('./run_gatk.sh', shell = True)
+#    step.runGATKfile()
+#    call('chmod 777 run_gatk.sh', shell = True)
+#    call('./run_gatk.sh', shell = True)
+
+step6 = FreebayesPipe('.')
+step6.getrmpfilelist()
+print step6.namelist
+step6.runGATKfile()
+call('chmod 777 run_gatk.sh', shell = True)
+call('./run_gatk.sh', shell = True)
