@@ -61,6 +61,7 @@ bamfile.sb.list > ' + j + '.sb.bcf')
     else:
         print 'the vcf file name is not unique! check your files please.'
     f1.close()
+    f2.close()
     call('chmod 777 run_samtools1.sh', shell = True)
     call('chmod 777 run_bcftools2.sh', shell = True)
     call('./run_samtools1.sh', shell = True)
