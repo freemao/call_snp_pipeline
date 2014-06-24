@@ -242,7 +242,7 @@ ReorderSam.jar ' + 'I=' + x + ' O=' + y + ' ' + 'REFERENCE=Osativa_204.fa\n')
         f0.close()
         call('parallel < run_order.txt', shell = True)
 
-    def getoderedfilelist(self):
+    def getorderedfilelist(self):
         for fn in self.allnamelist:
             seg = fn.split('.')
             temp = os.path.join(self.dirname, fn)
@@ -264,46 +264,4 @@ GenomeAnalysisTK.jar -nct 30 -T SplitNCigarReads -I ' + x + \
         call('parallel < run_splitN.txt', shell = True)
 
 if __name__ == '__main__':
-#    step1 = FreebayesPipe('.')
-#    step1.getgzfilelist()
-#    if step1.namelist:
-#        print step1.namelist
-#        step1.rungzfile()
-#        call('parallel < run_gz.txt', shell = True)
-
-#    step2 = FreebayesPipe('.')
-#    step2.getfqfilelist()
-#    print step2.namelist
-#    step2.pre_bwa()
-#    step2.runbwafile()
-#    call('parallel < run_bwa.txt', shell = True)
-
-#    step3 = FreebayesPipe('.')
-#    step3.getsamfilelist()
-#    print step3.namelist
-#    step3.runsam2bamfile()
-#    call('parallel < run_sam2bam.txt', shell = True)
-
-#    step4 = FreebayesPipe('.')
-#    step4.getbamfilelist()
-#    print step4.namelist
-#    step4.runsortfile()
-#    call('parallel < run_sort.txt', shell = True)
-
-#    step5 = FreebayesPipe('.')
-#    step5.getsortfilelist()
-#    print step5.namelist
-#    step5.runrmdupfile()
-#    call('parallel < run_rmp.txt', shell = True)
-
-#    step6 = FreebayesPipe('.')
-#    step6.getrmpfilelist()
-#    print step6.namelist
-#    step6.runaddrgfile()
-#    call('parallel < run_addrg.txt', shell = True)
-
-#    step7 = FreebayesPipe('.')
-#    step7.getrmpfilelist()
-#    print step7.namelist
-#    step7.runbaifile()
-#    call('parallel < run_bai.txt', shell = True)
+    print 'This file just contain functions for calling snp pipeline.'
