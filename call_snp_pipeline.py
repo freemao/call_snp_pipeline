@@ -24,13 +24,12 @@ class FreebayesPipe:
             if 'fai' not in all_suffixes:
                 call(['samtools', 'faidx', ref])
                 print 'faidx already'
-            elif 'dict' not in all_suffixes:
+            if 'dict' not in all_suffixes:
                 call(['java', '-jar', '/share/Public/cmiao/picard-tools-1.112\
 /CreateSequenceDictionary.jar', 'R=' + ref, 'O=' + ref.split('.')[0] + \
 '.dict'])
                 print 'dict already'
-            else:
-                print 'All the dependencies have prepared.'
+            print 'All the dependencies have prepared.'
         else:
             print 'Reference sequence file is not exist.'
 
@@ -110,7 +109,9 @@ self.namelist[i].split('00')[-1].split('_')[0]
 building..."
                 for i in self.allnamelist:
                     if i.split('.')[-1] in refq_suffixes:
+                        print 'the refseq name: %s'%(i)
                         prefix_i = i.split('.')[0]
+                        print 'the prefix of refseq name: %s'%(prefix_i)
                         call(['bowtie2-bulid', i, prefix_i])
         else:
             print 'No reference sequences found in current directory, \
