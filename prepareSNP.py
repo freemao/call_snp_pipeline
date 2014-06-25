@@ -117,8 +117,8 @@ def pre_RNA_bam():
 
 
 if __name__ == '__main__':
-    T == options.datatype
-    D == options.dataformat
+    T = options.datatype
+    D = options.dataformat
     if T == 'DNA' and D == 'fqgz':
         pre_DNA_fqgz()
     elif T == 'RNA' and D == 'fqgz':
