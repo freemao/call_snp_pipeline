@@ -14,8 +14,8 @@ optparser.add_option('-D', '--data', dest = 'dataformat',
                      help = 'point the data you have at present.')
 optparser.add_option('-T', '--type', dest = 'datatype',
                      help = 'your data is DNA or RNA ?')
-optparser.add_option('-R', '--reference', dest = 'referencename',
-                     help = 'point your reference sequence name.')
+#optparser.add_option('-R', '--reference', dest = 'referencename',
+#                     help = 'point your reference sequence name.')
 options, args = optparser.parse_args()
 
 def pre_DNA_fqgz():
