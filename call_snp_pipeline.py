@@ -98,7 +98,7 @@ self.namelist[i].split('00')[-1].split('_')[0]
 
     def pre_tophat2(self):
         refq_suffixes = ['fa', 'fasta']
-        index_suffixes = ('bt2')
+        index_suffixes = ('bt2',)
         all_suffixes = [i.split('.')[-1] for i in self.allnamelist]
         if set(refq_suffixes) & set(all_suffixes) :
             print 'Reference sequences file has found.'
@@ -112,7 +112,9 @@ building..."
                         print 'the refseq name: %s'%(i)
                         prefix_i = i.split('.')[0]
                         print 'the prefix of refseq name: %s'%(prefix_i)
-                        call(['bowtie2-bulid', i, prefix_i])
+                        cmd = 'bowtie2-build %s %s'%(i, prefix_i)
+                        print cmd
+                        call(cmd, shell=True)
         else:
             print 'No reference sequences found in current directory, \
 please check your files.'
@@ -122,15 +124,17 @@ please check your files.'
         for i in L:
             self.arg1.append(self.namelist[i])
             self.arg2.append(self.namelist[i+1])
-        f0 = open('run_tophat2.txt', 'w')
+        f0 = open('run_tophat2.sh', 'w')
         for x, y in zip(self.arg1, self.arg2):
-            f0.write('tophat2 -p 64 -G Osativa_204.gtf --max-intro-length \
-15000 --mate-inner-dist 50 --mate-std-dev 50 -O . ./Osativa_204 ' + \
-self.arg1+' '+self.arg2 + '\n')
+            f0.write('tophat2 -p 64 -G Osativa_204.gtf --max-intron-length \
+15000 --mate-inner-dist 50 --mate-std-dev 50 -o . ./Osativa_204 ' + \
+x + ' '+ y + '\n')
             bamname = '_'.join(x.split('_')[:-1]) + '.bam'
             f0.write('mv ./accepted_hits.bam ' + bamname + '\n')
+            f0.write('rm ./unmapped.bam\n')
         f0.close()
-        call('./run_tophat2.txt', shell = True)
+        call('chmod 777 run_tophat2.sh', shell = True)
+        call('./run_tophat2.sh', shell = True)
 
     def getsamfilelist(self):
         for fn in self.allnamelist:
@@ -231,6 +235,7 @@ self.arg1+' '+self.arg2 + '\n')
         for x in self.arg1:
             f0.write('samtools index ' + x + '\n')
         f0.close()
+        call('parallel < run_bai.txt', shell = True)
 
     def runorderfile(self):
         for i in self.namelist:
@@ -259,10 +264,19 @@ ReorderSam.jar ' + 'I=' + x + ' O=' + y + ' ' + 'REFERENCE=Osativa_204.fa\n')
         f0 = open('run_splitN.txt', 'w')
         for x, y in zip(self.arg1, self.arg2):
             f0.write('java -jar /share/Public/cmiao/GATK_tools/\
-GenomeAnalysisTK.jar -nct 30 -T SplitNCigarReads -I ' + x + \
+GenomeAnalysisTK.jar -T SplitNCigarReads -I ' + x + \
 ' -U ALLOW_N_CIGAR_READS' +' -o ' + y + ' -R Osativa_204.fa\n')
         f0.close()
         call('parallel < run_splitN.txt', shell = True)
+
+    def getreadyfilelist(self):
+        for fn in self.allnamelist:
+            seg = fn.split('.')
+            temp = os.path.join(self.dirname, fn)
+            if (os.path.isfile(temp)
+                and seg[1:] == ['Nsplited', 'ready', 'bam']):
+                self.namelist.append(fn)
+                self.namelist.sort()
 
 if __name__ == '__main__':
     print 'This file just contain functions for calling snp pipeline.'

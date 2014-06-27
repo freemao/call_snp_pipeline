@@ -11,24 +11,28 @@ the data you have, such as fastq? sam? bam?. You also should point the type
 of your data,DNA? or RNA?
 '''
 optparser = OptionParser(usage = msg_usage, description = descr)
-optparser.add_option('-D', '--data', dest = 'dataformat',
-                     help = 'point the data you have at present.')
+#optparser.add_option('-D', '--data', dest = 'dataformat',
+#                     help = 'point the data you have at present.')
 optparser.add_option('-C', '--caller', dest = 'snpcaller',
                      help = 'point the caller you want to use.')
 optparser.add_option('-T', '--type', dest = 'datatype',
                      help = 'your data is DNA or RNA ?')
-optparser.add_option('-R', '--reference', dest = 'referencename',
-                     help = 'point your reference sequence name.')
+#optparser.add_option('-R', '--reference', dest = 'referencename',
+#                     help = 'point your reference sequence name.')
 options, args = optparser.parse_args()
 
-step = FreebayesPipe('.')
-step.getrmpfilelist()
-print step.namelist
+DNA_step = FreebayesPipe('.')
+DNA_step.getrmpfilelist()
+print DNA_step.namelist
 
-def runfreebayesfile():
+RNA_step = FreebayesPipe('.')
+RNA_step.getreadyfilelist()
+print RNA_step.namelist
+
+def runfreebayesfile(fileslist):
     f0 = open('bamfile.fb.list', 'w')
     vcfname = set()
-    for i in step.namelist:
+    for i in fileslist:
         j = i.split('-')[0][1:]
         vcfname.add(j)
         f0.write(i + '\n')
@@ -43,10 +47,10 @@ def runfreebayesfile():
     call('chmod 777 run_freebayes.sh', shell = True)
     call('./run_freebayes.sh', shell = True)
 
-def runsambcffile():
+def runsambcffile(fileslist):
     f0 = open('bamfile.sb.list', 'w')
     vcfname = set()
-    for i in step.namelist:
+    for i in fileslist:
         j = i.split('-')[0][1:]
         vcfname.add(j)
         f0.write(i + '\n')
@@ -67,10 +71,10 @@ bamfile.sb.list > ' + j + '.sb.bcf')
     call('./run_samtools1.sh', shell = True)
     call('./run_bcftools2.sh', shell = True)
 
-def runGATKfile():
+def runGATKfile(fileslist):
     filenames = []
     vcfname = set()
-    for i in step.namelist:
+    for i in fileslist:
         j = i.split('-')[0][1:]
         vcfname.add(j)
         filenames.append(i)
@@ -92,14 +96,20 @@ filearg + ' -o ' + j +'.gatk.vcf')
 if __name__ == '__main__':
     import sys
     C = options.snpcaller
-    if C == 'FB':
-        runfreebayesfile()
-    elif C == 'GATK':
-        runGATKfile()
-    elif C == 'SB':
-        runsambcffile()
+    T = options.datatype
+
+    if C == 'FB' and T == 'DNA':
+        runfreebayesfile(DNA_step.namelist)
+    elif C == 'GATK' and T == 'DNA':
+        runGATKfile(DNA_step.namelist)
+    elif C == 'SB' and T == 'DNA':
+        runsambcffile(DNA_step.namelist)
+    elif C == 'FB' and T == 'RNA':
+        runfreebayesfile(RNA_step.namelist)
+    elif C == 'GATK' and T == 'RNA':
+        runGATKfile(RNA_step.namelist)
+    elif C == 'SB' and T == 'RNA':
+        runsambcffile(RNA_step.namelist)
     else:
         print 'Please choose the caller.'
-
-
 
