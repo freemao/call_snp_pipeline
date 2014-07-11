@@ -1,5 +1,6 @@
 #!/usr/lib/python
 #-*- coding:utf-8 -*-
+import datetime
 from optparse import OptionParser
 from call_snp_pipeline import FreebayesPipe
 from subprocess import call
@@ -45,7 +46,13 @@ def runfreebayesfile(fileslist):
         print 'the vcf file name is not unique! check your files please.'
     f1.close()
     call('chmod 777 run_freebayes.sh', shell = True)
+    st = datetime.datetime.now()
     call('./run_freebayes.sh', shell = True)
+    et = datetime.datetime.now()
+    runtime = et-st
+    m_time = runtime/60
+    h_time = m_time/60
+    print 'run freebayes time: %sh-%sm'%(str(h_time), str(m_time))
 
 def runsambcffile(fileslist):
     f0 = open('bamfile.sb.list', 'w')
@@ -68,8 +75,14 @@ bamfile.sb.list > ' + j + '.sb.bcf')
     f2.close()
     call('chmod 777 run_samtools1.sh', shell = True)
     call('chmod 777 run_bcftools2.sh', shell = True)
+    st = datetime.datetime.now()
     call('./run_samtools1.sh', shell = True)
     call('./run_bcftools2.sh', shell = True)
+    et = datetime.datetime.now()
+    runtime = et-st
+    m_time = runtime/60
+    h_time = m_time/60
+    print 'run samtools time: %sh-%sm'%(str(h_time), str(m_time))
 
 def runGATKfile(fileslist):
     filenames = []
@@ -91,7 +104,14 @@ filearg + ' -o ' + j +'.gatk.vcf')
         print 'the vcf file name is not unique! check your files please.'
     f1.close()
     call('chmod 777 run_gatk.sh', shell = True)
+    st = datetime.datetime.now()
     call('./run_gatk.sh', shell = True)
+    et = datetime.datetime.now()
+    runtime = et-st
+    m_time = runtime/60
+    h_time = m_time/60
+    print 'run GATK time: %sh-%sm'%(str(h_time), str(m_time))
+
 
 if __name__ == '__main__':
     import sys

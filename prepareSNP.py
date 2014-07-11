@@ -67,7 +67,7 @@ def pre_RNA_fqgz():
     step2 = FreebayesPipe('.')
     step2.getbamfilelist()
     print step2.namelist
-    step3.runsortfile()
+    step2.runsortfile()
 
     step3 = FreebayesPipe('.')
     step3.getsortfilelist()
