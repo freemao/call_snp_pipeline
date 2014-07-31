@@ -8,10 +8,18 @@ msg_usage = 'usage: %prog [-D] [-T] [-R]'
 descr = '''This script mainly create the datas which meet the snp callers'
 needs.You should choose the data you have, such as fastq? sam? bam?. You
 also should point the type of your data,DNA? or RNA?
+Caveat: the fasq.gz file should follow the name format:
+'F12-1_CTTGA_L006_R?.fastq.gz'
+F: The material is from which part of your sample? one letter, for example,
+L means leaf, F means flower.
+12: Your sample name.Can not contain any symbols.
+-: dash. 1: which repeat? one number. _: underline. CTTGA: barcode.
+L006: which lane?
 '''
 optparser = OptionParser(usage = msg_usage, description = descr)
 optparser.add_option('-D', '--data', dest = 'dataformat',
-                     help = 'point the data you have at present.')
+                     help = 'point the data you have at present.\
+                     fqgz? bam? orderedbam?')
 optparser.add_option('-T', '--type', dest = 'datatype',
                      help = 'your data is DNA or RNA ?')
 #optparser.add_option('-R', '--reference', dest = 'referencename',
@@ -25,7 +33,7 @@ def pre_DNA_fqgz():
     step1.getgzfilelist()
     print step1.namelist
     step1.pre_bwa()
-    step1.run_bwa()
+    step1.runbwafile()
 
     step2 = FreebayesPipe('.')
     step2.getsamfilelist()
@@ -40,8 +48,13 @@ def pre_DNA_fqgz():
     step4 = FreebayesPipe('.')
     step4.getsortfilelist()
     print step4.namelist
-    step4.rmdupfile()
-    step4.runbaifile()
+    step4.runrmdupfile()
+
+    step5 = FreebayesPipe('.')
+    step5.getrmpfilelist()
+    print step5.namelist
+    step5.runbaifile()
+
 
 def pre_DNA_bam():
     step3 = FreebayesPipe('.')
@@ -52,8 +65,29 @@ def pre_DNA_bam():
     step4 = FreebayesPipe('.')
     step4.getsortfilelist()
     print step4.namelist
-    step4.rmdupfile()
-    step4.runbaifile()
+    step4.runrmdupfile()
+
+    step5 = FreebayesPipe('.')
+    step5.getrmpfilelist()
+    print step5.namelist
+    step5.runbaifile()
+
+def pre_DNA_sortedbam():
+    step4 = FreebayesPipe('.')
+    step4.getsortfilelist()
+    print step4.namelist
+    step4.runrmdupfile()
+
+    step5 = FreebayesPipe('.')
+    step5.getrmpfilelist()
+    print step5.namelist
+    step5.runbaifile()
+
+def pre_DNA_rmpbam():
+    step5 = FreebayesPipe('.')
+    step5.getrmpfilelist()
+    print step5.namelist
+    step5.runbaifile()
 
 def pre_RNA_fqgz():
     ref = FreebayesPipe('.')
@@ -131,6 +165,10 @@ if __name__ == '__main__':
         pre_DNA_fqgz()
     elif T == 'DNA' and D == 'bam':
         pre_DNA_bam()
+    elif T == 'DNA' and D == 'sortedbam':
+        pre_DNA_sortedbam()
+    elif T == 'DNA' and D == 'rmpbam':
+        pre_DNA_rmpbam()
     elif T == 'RNA' and D == 'fqgz':
         pre_RNA_fqgz()
     elif T == 'RNA' and D == 'bam':

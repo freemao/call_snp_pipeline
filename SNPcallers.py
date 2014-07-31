@@ -15,7 +15,7 @@ optparser = OptionParser(usage = msg_usage, description = descr)
 #optparser.add_option('-D', '--data', dest = 'dataformat',
 #                     help = 'point the data you have at present.')
 optparser.add_option('-C', '--caller', dest = 'snpcaller',
-                     help = 'point the caller you want to use.')
+                     help = 'point the caller you want to use. FB, SB, or GATK?')
 optparser.add_option('-T', '--type', dest = 'datatype',
                      help = 'your data is DNA or RNA ?')
 #optparser.add_option('-R', '--reference', dest = 'referencename',
@@ -24,11 +24,11 @@ options, args = optparser.parse_args()
 
 DNA_step = FreebayesPipe('.')
 DNA_step.getrmpfilelist()
-print DNA_step.namelist
+print 'files used to call DNA SNP %s'%DNA_step.namelist
 
 RNA_step = FreebayesPipe('.')
 RNA_step.getreadyfilelist()
-print RNA_step.namelist
+print 'files used to call RNA SNP %s'%RNA_step.namelist
 
 def runfreebayesfile(fileslist):
     f0 = open('bamfile.fb.list', 'w')
@@ -40,10 +40,11 @@ def runfreebayesfile(fileslist):
     f0.close()
     f1 = open('run_freebayes.sh', 'w')
     if len(vcfname) == 1:
-        f1.write('freebayes -f Osativa_204.fa -F 0.1 -L bamfile.fb.list > ' \
+        f1.write('freebayes -f link1.fa -L bamfile.fb.list > ' \
 + j + '.fb.vcf')
     else:
-        print 'the vcf file name is not unique! check your files please.'
+        print 'the vcf file name is not unique! check your files please.The\
+ directory can not contain 2 samples'
     f1.close()
     call('chmod 777 run_freebayes.sh', shell = True)
     st = datetime.datetime.now()
@@ -65,7 +66,7 @@ def runsambcffile(fileslist):
     f1 = open('run_samtools1.sh', 'w')
     f2 = open('run_bcftools2.sh', 'w')
     if len(vcfname) == 1:
-        f1.write('samtools mpileup -f Osativa_204.fa -P ILLUMINA -EgD -b \
+        f1.write('samtools mpileup -f link1.fa -P ILLUMINA -EgD -b \
 bamfile.sb.list > ' + j + '.sb.bcf')
         f2.write('bcftools view -cNegv ' + j + '.sb.bcf' + ' > ' + j + \
 '.sb.vcf')
@@ -98,7 +99,7 @@ def runGATKfile(fileslist):
     f1 = open('run_gatk.sh', 'w')
     if len(vcfname) == 1:
         f1.write('java -jar /share/Public/cmiao/GATK_tools/\
-GenomeAnalysisTK.jar -nct 30 -T HaplotypeCaller -R Osativa_204.fa' + \
+GenomeAnalysisTK.jar -nct 30 -T HaplotypeCaller -R link1.fa' + \
 filearg + ' -o ' + j +'.gatk.vcf')
     else:
         print 'the vcf file name is not unique! check your files please.'

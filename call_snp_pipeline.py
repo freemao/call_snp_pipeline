@@ -21,6 +21,7 @@ class FreebayesPipe:
             for i in self.allnamelist:
                 if i.split('.')[-1] in refq_suffixes:
                     ref = i
+                    print 'reference sequence: %s'%i
             if 'fai' not in all_suffixes:
                 call(['samtools', 'faidx', ref])
                 print 'faidx already'
@@ -74,6 +75,7 @@ building..."
 please check your files.'
 
     def runbwafile(self):
+        print 'running bwa...'
         L = range(0, len(self.namelist), 2)
         lib = 1
         for i in L:
@@ -91,7 +93,7 @@ self.namelist[i].split('00')[-1].split('_')[0]
             self.arg4.append(R)
         f0 = open('run_bwa.txt', 'w')
         for x, y, z, w in zip(self.arg1, self.arg2, self.arg3, self.arg4):
-            f0.write('bwa mem -t 30 -R ' + w + ' Osativa_204.fa ' \
+            f0.write('bwa mem -t 30 -R ' + w + ' link1.fa ' \
 + x + ' '+y + ' > ' + z + '\n')
         f0.close()
         call('parallel < run_bwa.txt', shell = True)
@@ -144,6 +146,7 @@ x + ' '+ y + '\n')
                 self.namelist.sort()
 
     def runsam2bamfile(self):
+        print 'running sam to bam...'
         for i in self.namelist:
             self.arg1.append(i)
             self.arg2.append(i.split('.')[0] + '.bam')
@@ -162,6 +165,7 @@ x + ' '+ y + '\n')
                 self.namelist.sort()
 
     def runsortfile(self):
+        print 'running sort bam...'
         for i in self.namelist:
             self.arg1.append(i)
             self.arg2.append(i.split('.')[0] + '.sorted')
@@ -181,6 +185,7 @@ x + ' '+ y + '\n')
                 self.namelist.sort()
 
     def runrmdupfile(self):
+        print 'running remove duplicate reads...'
         for i in self.namelist:
             self.arg1.append(i)
             self.arg2.append(i.split('.')[0] + '.sorted.rmp.bam')
@@ -229,6 +234,7 @@ x + ' '+ y + '\n')
                 self.namelist.sort()
 
     def runbaifile(self):
+        print 'buiding index of bam file...'
         for i in self.namelist:
             self.arg1.append(i)
         f0 = open('run_bai.txt', 'w')
@@ -244,7 +250,7 @@ x + ' '+ y + '\n')
         f0 = open('run_order.txt', 'w')
         for x, y in zip(self.arg1, self.arg2):
             f0.write('java -jar /share/Public/cmiao/picard-tools-1.112/\
-ReorderSam.jar ' + 'I=' + x + ' O=' + y + ' ' + 'REFERENCE=Osativa_204.fa\n')
+ReorderSam.jar ' + 'I=' + x + ' O=' + y + ' ' + 'REFERENCE=link1.fa\n')
         f0.close()
         call('parallel < run_order.txt', shell = True)
 
@@ -265,7 +271,7 @@ ReorderSam.jar ' + 'I=' + x + ' O=' + y + ' ' + 'REFERENCE=Osativa_204.fa\n')
         for x, y in zip(self.arg1, self.arg2):
             f0.write('java -jar /share/Public/cmiao/GATK_tools/\
 GenomeAnalysisTK.jar -T SplitNCigarReads -I ' + x + \
-' -U ALLOW_N_CIGAR_READS' +' -o ' + y + ' -R Osativa_204.fa\n')
+' -U ALLOW_N_CIGAR_READS' +' -o ' + y + ' -R link1.fa\n')
         f0.close()
         call('parallel < run_splitN.txt', shell = True)
 
