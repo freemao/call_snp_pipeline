@@ -4,6 +4,11 @@ import os
 from subprocess import call
 
 class FreebayesPipe:
+    '''This FreebayesPipe class contains all the  steps to prepare to call
+SNP whether for DNA data or RNA data. For DNA data, the synopsis is 1,fq.gz.
+2,sam. 3,bam. 4,sorted.bam. 5,sorted.rmp.bam.6,sorted.rmp.bam.bai. While for
+the RNA data, the synopsis is 1,fq.gz. 2,bam. 3,sorted.bam. 4,sorted.rmp.bam.
+5,sorted.rmp.rg.bam. 6,ordered.bam. 7,Nsplited.ready.bam.'''
     def __init__(self, dirname):
         self.dirname = dirname
         self.allnamelist = os.listdir(dirname)
@@ -285,4 +290,5 @@ GenomeAnalysisTK.jar -T SplitNCigarReads -I ' + x + \
                 self.namelist.sort()
 
 if __name__ == '__main__':
-    print 'This file just contain functions for calling snp pipeline.'
+    print 'Feel free to use this class!'
+    print FreebayesPipe.__doc__
