@@ -5,7 +5,7 @@ from optparse import OptionParser
 from call_snp_pipeline import FreebayesPipe
 from subprocess import call
 
-msg_usage = 'usage: %prog [-D] [-C] [-T] [-R]'
+msg_usage = 'usage: %prog [-C] callers [-T] DANorRNA [-R] reference'
 descr = '''This script gather the different snp callers:freebyes, GATK, and
 samtools.By pointing -c, You can choose any tool you like. You should choose
 the data you have, such as fastq? sam? bam?. You also should point the type
@@ -18,6 +18,8 @@ optparser.add_option('-C', '--caller', dest = 'snpcaller',
                      help = 'point the caller you want to use. FB, SB, or GATK?')
 optparser.add_option('-T', '--type', dest = 'datatype',
                      help = 'your data is DNA or RNA ?')
+optparser.add_option('-R', '--ref', dest = 'refpath',
+                     help = 'where is your reference seq ?')
 #optparser.add_option('-R', '--reference', dest = 'referencename',
 #                     help = 'point your reference sequence name.')
 options, args = optparser.parse_args()
@@ -30,7 +32,7 @@ RNA_step = FreebayesPipe('.')
 RNA_step.getreadyfilelist()
 print 'files used to call RNA SNP %s'%RNA_step.namelist
 
-def runfreebayesfile(fileslist):
+def runfreebayesfile(fileslist,ref):
     f0 = open('bamfile.fb.list', 'w')
     vcfname = set()
     for i in fileslist:
@@ -40,7 +42,7 @@ def runfreebayesfile(fileslist):
     f0.close()
     f1 = open('run_freebayes.sh', 'w')
     if len(vcfname) == 1:
-        f1.write('freebayes -f link1.fa -L bamfile.fb.list > ' \
+        f1.write('freebayes -f %s -L bamfile.fb.list > '%ref \
 + j + '.fb.vcf')
     else:
         print 'the vcf file name is not unique! check your files please.The\
@@ -55,7 +57,7 @@ def runfreebayesfile(fileslist):
     h_time = m_time/60
     print 'run freebayes time: %sh-%sm'%(str(h_time), str(m_time))
 
-def runsambcffile(fileslist):
+def runsambcffile(fileslist, ref):
     f0 = open('bamfile.sb.list', 'w')
     vcfname = set()
     for i in fileslist:
@@ -66,8 +68,8 @@ def runsambcffile(fileslist):
     f1 = open('run_samtools1.sh', 'w')
     f2 = open('run_bcftools2.sh', 'w')
     if len(vcfname) == 1:
-        f1.write('samtools mpileup -f link1.fa -P ILLUMINA -EgD -b \
-bamfile.sb.list > ' + j + '.sb.bcf')
+        f1.write('samtools mpileup -f %s -P ILLUMINA -EgD -b \
+bamfile.sb.list > '%ref + j + '.sb.bcf')
         f2.write('bcftools view -cNegv ' + j + '.sb.bcf' + ' > ' + j + \
 '.sb.vcf')
     else:
@@ -85,7 +87,7 @@ bamfile.sb.list > ' + j + '.sb.bcf')
     h_time = m_time/60
     print 'run samtools time: %sh-%sm'%(str(h_time), str(m_time))
 
-def runGATKfile(fileslist):
+def runGATKfile(fileslist,ref):
     filenames = []
     vcfname = set()
     for i in fileslist:
@@ -99,7 +101,7 @@ def runGATKfile(fileslist):
     f1 = open('run_gatk.sh', 'w')
     if len(vcfname) == 1:
         f1.write('java -jar /share/Public/cmiao/GATK_tools/\
-GenomeAnalysisTK.jar -nct 30 -T HaplotypeCaller -R link1.fa' + \
+GenomeAnalysisTK.jar -nct 30 -T HaplotypeCaller -R %s '%ref + \
 filearg + ' -o ' + j +'.gatk.vcf')
     else:
         print 'the vcf file name is not unique! check your files please.'
@@ -118,19 +120,20 @@ if __name__ == '__main__':
     import sys
     C = options.snpcaller
     T = options.datatype
+    R = options.refpath
 
     if C == 'FB' and T == 'DNA':
-        runfreebayesfile(DNA_step.namelist)
+        runfreebayesfile(DNA_step.namelist,R)
     elif C == 'GATK' and T == 'DNA':
-        runGATKfile(DNA_step.namelist)
+        runGATKfile(DNA_step.namelist,R)
     elif C == 'SB' and T == 'DNA':
-        runsambcffile(DNA_step.namelist)
+        runsambcffile(DNA_step.namelist,R)
     elif C == 'FB' and T == 'RNA':
-        runfreebayesfile(RNA_step.namelist)
+        runfreebayesfile(RNA_step.namelist,R)
     elif C == 'GATK' and T == 'RNA':
-        runGATKfile(RNA_step.namelist)
+        runGATKfile(RNA_step.namelist,R)
     elif C == 'SB' and T == 'RNA':
-        runsambcffile(RNA_step.namelist)
+        runsambcffile(RNA_step.namelist,R)
     else:
         print 'Please choose the caller.'
 

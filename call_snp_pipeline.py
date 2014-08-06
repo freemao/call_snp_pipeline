@@ -9,7 +9,7 @@ SNP whether for DNA data or RNA data. For DNA data, the synopsis is 1,fq.gz.
 2,sam. 3,bam. 4,sorted.bam. 5,sorted.rmp.bam.6,sorted.rmp.bam.bai. While for
 the RNA data, the synopsis is 1,fq.gz. 2,bam. 3,sorted.bam. 4,sorted.rmp.bam.
 5,sorted.rmp.rg.bam. 6,ordered.bam. 7,Nsplited.ready.bam.'''
-    def __init__(self, dirname):
+    def __init__(self, dirname='.'):
         self.dirname = dirname
         self.allnamelist = os.listdir(dirname)
         self.namelist = []
@@ -18,26 +18,28 @@ the RNA data, the synopsis is 1,fq.gz. 2,bam. 3,sorted.bam. 4,sorted.rmp.bam.
         self.arg3 = []
         self.arg4 = []
 
-    def pre_ref(self):
-        refq_suffixes = ['fa', 'fasta']
-        all_suffixes = [i.split('.')[-1] for i in self.allnamelist]
-        if set(refq_suffixes) & set(all_suffixes) :
-            print 'Reference sequences file has found.'
-            for i in self.allnamelist:
-                if i.split('.')[-1] in refq_suffixes:
-                    ref = i
-                    print 'reference sequence: %s'%i
-            if 'fai' not in all_suffixes:
-                call(['samtools', 'faidx', ref])
-                print 'faidx already'
-            if 'dict' not in all_suffixes:
-                call(['java', '-jar', '/share/Public/cmiao/picard-tools-1.112\
-/CreateSequenceDictionary.jar', 'R=' + ref, 'O=' + ref.split('.')[0] + \
-'.dict'])
-                print 'dict already'
-            print 'All the dependencies have prepared.'
-        else:
-            print 'Reference sequence file is not exist.'
+    def pre_ref(self, refseq):
+        '''designate refseq path'''
+#        refq_suffixes = ['fa', 'fasta']
+        dirseq = '/'.join(refseq.split('/')[0:-1])
+        all_suffixes = [i.split('.')[-1] for i in os.listdir(dirseq)]
+#        if set(refq_suffixes) & set(all_suffixes) :
+#            print 'Reference sequences file has found.'
+#            for i in self.allnamelist:
+#                if i.split('.')[-1] in refq_suffixes:
+#                    ref = i
+#                    print 'reference sequence: %s'%i
+        if 'fai' not in all_suffixes:
+            call(['samtools', 'faidx', refseq])
+            print 'faidx already'
+        if 'dict' not in all_suffixes:
+            dictname =  '.'.join(refseq.split('.')[0:-1])+'.dict'
+            call(['java', '-jar', '/share/Public/cmiao/picard-tools-1.112\
+/CreateSequenceDictionary.jar', 'R=' + refseq, 'O=' + dictname])
+            print 'dict already'
+        print 'All the dependencies have prepared.'
+#        else:
+#            print 'Reference sequence file is not exist.'
 
     def getgzfilelist(self):
         for fn in self.allnamelist:
@@ -61,25 +63,26 @@ the RNA data, the synopsis is 1,fq.gz. 2,bam. 3,sorted.bam. 4,sorted.rmp.bam.
                 self.namelist.append(fn)
                 self.namelist.sort()
 
-    def pre_bwa(self):
+    def pre_bwa(self, refseq):
         refq_suffixes = ['fa', 'fasta']
+        dirseq = '/'.join(refseq.split('/')[0:-1])
         index_suffixes = ('amb', 'ann', 'bwt', 'pac', 'sa')
-        all_suffixes = [i.split('.')[-1] for i in self.allnamelist]
-        if set(refq_suffixes) & set(all_suffixes) :
-            print 'Reference sequences file has found.'
-            if set(index_suffixes).issubset(all_suffixes):
-                print 'The index has been built.'
-            else:
-                print "The reference sequence don't build index yet. \
-building..."
-                for i in self.allnamelist:
-                    if i.split('.')[-1] in refq_suffixes:
-                        call(['bwa', 'index', i])
+        all_suffixes = [i.split('.')[-1] for i in os.listdir(dirseq)]
+#        if set(refq_suffixes) & set(all_suffixes) :
+#            print 'Reference sequences file has found.'
+        if set(index_suffixes).issubset(all_suffixes):
+            print 'The index has been built.'
         else:
-            print 'No reference sequences found in current directory, \
-please check your files.'
+            print "The reference sequence don't build index yet. \
+building..."
+#                for i in self.allnamelist:
+#                    if i.split('.')[-1] in refq_suffixes:
+            call(['bwa', 'index', refseq])
+#        else:
+#            print 'No reference sequences found in current directory, \
+#please check your files.'
 
-    def runbwafile(self):
+    def runbwafile(self, refseq):
         print 'running bwa...'
         L = range(0, len(self.namelist), 2)
         lib = 1
@@ -98,35 +101,36 @@ self.namelist[i].split('00')[-1].split('_')[0]
             self.arg4.append(R)
         f0 = open('run_bwa.txt', 'w')
         for x, y, z, w in zip(self.arg1, self.arg2, self.arg3, self.arg4):
-            f0.write('bwa mem -t 30 -R ' + w + ' link1.fa ' \
+            f0.write('bwa mem -t 30 -R ' + w + ' '+refseq+' ' \
 + x + ' '+y + ' > ' + z + '\n')
         f0.close()
         call('parallel < run_bwa.txt', shell = True)
 
-    def pre_tophat2(self):
-        refq_suffixes = ['fa', 'fasta']
+    def pre_tophat2(self, refseq):
+#        refq_suffixes = ['fa', 'fasta']
+        dirseq = '/'.join(refseq.split('/')[0:-1])
+        all_suffixes = [i.split('.')[-1] for i in os.listdir(dirseq)]
         index_suffixes = ('bt2',)
-        all_suffixes = [i.split('.')[-1] for i in self.allnamelist]
-        if set(refq_suffixes) & set(all_suffixes) :
-            print 'Reference sequences file has found.'
-            if set(index_suffixes).issubset(all_suffixes):
-                print 'The index has been built.'
-            else:
-                print "The reference sequence don't build index yet. \
-building..."
-                for i in self.allnamelist:
-                    if i.split('.')[-1] in refq_suffixes:
-                        print 'the refseq name: %s'%(i)
-                        prefix_i = i.split('.')[0]
-                        print 'the prefix of refseq name: %s'%(prefix_i)
-                        cmd = 'bowtie2-build %s %s'%(i, prefix_i)
-                        print cmd
-                        call(cmd, shell=True)
+#        if set(refq_suffixes) & set(all_suffixes) :
+#            print 'Reference sequences file has found.'
+        if set(index_suffixes).issubset(all_suffixes):
+            print 'The index has been built.'
         else:
-            print 'No reference sequences found in current directory, \
-please check your files.'
+            print "The reference sequence don't build index yet. \
+building..."
+#                for i in self.allnamelist:
+#                    if i.split('.')[-1] in refq_suffixes:
+#                        print 'the refseq name: %s'%(i)
+            prefix_seq = '.'.join(refseq.split('.')[0:-1])
+            print 'the prefix of refseq name: %s'%(prefix_seq)
+            cmd = 'bowtie2-build %s %s'%(refseq, prefix_seq)
+            print cmd
+            call(cmd, shell=True)
+#        else:
+#            print 'No reference sequences found in current directory, \
+#please check your files.'
 
-    def runtophat2file(self):
+    def runtophat2file(self, refseq):
         L = range(0, len(self.namelist), 2)
         for i in L:
             self.arg1.append(self.namelist[i])
