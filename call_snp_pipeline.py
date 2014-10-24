@@ -20,26 +20,24 @@ the RNA data, the synopsis is 1,fq.gz. 2,bam. 3,sorted.bam. 4,sorted.rmp.bam.
 
     def pre_ref(self, refseq):
         '''designate refseq path'''
-#        refq_suffixes = ['fa', 'fasta']
-        dirseq = '/'.join(refseq.split('/')[0:-1])
+        abspathrefseq = os.path.abspath(refseq)
+        if os.path.isfile(abspathrefseq):
+            print 'the reference: %s'%abspathrefseq
+        else:
+            return 'rhe reference %s does not exists!!'%abspathrefseq
+        dirseq = os.path.dirname(abspathrefseq)
         all_suffixes = [i.split('.')[-1] for i in os.listdir(dirseq)]
-#        if set(refq_suffixes) & set(all_suffixes) :
-#            print 'Reference sequences file has found.'
-#            for i in self.allnamelist:
-#                if i.split('.')[-1] in refq_suffixes:
-#                    ref = i
-#                    print 'reference sequence: %s'%i
         if 'fai' not in all_suffixes:
-            call(['samtools', 'faidx', refseq])
-            print 'faidx already'
+            cmd1 = 'samtools faidx %s'%abspathrefseq
+            call(cmd1, shell=True)
+            print 'reference index already.'
         if 'dict' not in all_suffixes:
-            dictname =  '.'.join(refseq.split('.')[0:-1])+'.dict'
-            call(['java', '-jar', '/share/Public/cmiao/picard-tools-1.112\
-/CreateSequenceDictionary.jar', 'R=' + refseq, 'O=' + dictname])
-            print 'dict already'
+            dictname = '.'.join(abspathrefseq.split('.')[0:-1])+'.dict'
+            cmd2 = 'java -jar /share/Public/cmiao/picard-tools-1.112/\
+CreateSequenceDictionary.jar R=%s O=%s'%(abspathrefseq, dictname)
+            call(cmd2, shell=True)
+            print 'reference dict already.'
         print 'All the dependencies have prepared.'
-#        else:
-#            print 'Reference sequence file is not exist.'
 
     def getgzfilelist(self):
         for fn in self.allnamelist:
@@ -64,23 +62,17 @@ the RNA data, the synopsis is 1,fq.gz. 2,bam. 3,sorted.bam. 4,sorted.rmp.bam.
                 self.namelist.sort()
 
     def pre_bwa(self, refseq):
-        refq_suffixes = ['fa', 'fasta']
-        dirseq = '/'.join(refseq.split('/')[0:-1])
+        abspathrefseq = os.path.abspath(refseq)
+        dirseq = os.path.dirname(abspathrefseq)
         index_suffixes = ('amb', 'ann', 'bwt', 'pac', 'sa')
         all_suffixes = [i.split('.')[-1] for i in os.listdir(dirseq)]
-#        if set(refq_suffixes) & set(all_suffixes) :
-#            print 'Reference sequences file has found.'
         if set(index_suffixes).issubset(all_suffixes):
-            print 'The index has been built.'
+            print 'The bwa index has been built.'
         else:
-            print "The reference sequence don't build index yet. \
+            print "The reference sequence don't build bwa index yet. \
 building..."
-#                for i in self.allnamelist:
-#                    if i.split('.')[-1] in refq_suffixes:
-            call(['bwa', 'index', refseq])
-#        else:
-#            print 'No reference sequences found in current directory, \
-#please check your files.'
+            cmd = 'bwa index %s'%abspathrefseq
+            call(cmd, shell=True)
 
     def runbwafile(self, refseq):
         print 'running bwa...'
@@ -101,45 +93,42 @@ self.namelist[i].split('00')[-1].split('_')[0]
             self.arg4.append(R)
         f0 = open('run_bwa.txt', 'w')
         for x, y, z, w in zip(self.arg1, self.arg2, self.arg3, self.arg4):
-            f0.write('bwa mem -t 30 -R ' + w + ' '+refseq+' ' \
-+ x + ' '+y + ' > ' + z + '\n')
+            cmd1 = 'bwa mem -t 1 -R %s %s %s %s > %s \n'%(w, refseq, x, y, z)
+            f0.write(cmd1)
         f0.close()
         call('parallel < run_bwa.txt', shell = True)
 
     def pre_tophat2(self, refseq):
-#        refq_suffixes = ['fa', 'fasta']
-        dirseq = '/'.join(refseq.split('/')[0:-1])
+        abspathrefseq = os.path.abspath(refseq)
+        dirseq = os.path.dirname(abspathrefseq)
         all_suffixes = [i.split('.')[-1] for i in os.listdir(dirseq)]
         index_suffixes = ('bt2',)
-#        if set(refq_suffixes) & set(all_suffixes) :
-#            print 'Reference sequences file has found.'
         if set(index_suffixes).issubset(all_suffixes):
-            print 'The index has been built.'
+            print 'The tophat2 reference index has been built.'
         else:
-            print "The reference sequence don't build index yet. \
+            print "The reference sequence don't build tophat2 index yet. \
 building..."
-#                for i in self.allnamelist:
-#                    if i.split('.')[-1] in refq_suffixes:
-#                        print 'the refseq name: %s'%(i)
-            prefix_seq = '.'.join(refseq.split('.')[0:-1])
+            prefix_seq = '.'.join(abspathrefseq.split('.')[0:-1])
             print 'the prefix of refseq name: %s'%(prefix_seq)
-            cmd = 'bowtie2-build %s %s'%(refseq, prefix_seq)
+            cmd = 'bowtie2-build %s %s'%(abspathrefseq, prefix_seq)
             print cmd
             call(cmd, shell=True)
-#        else:
-#            print 'No reference sequences found in current directory, \
-#please check your files.'
 
-    def runtophat2file(self, refseq):
+    def runtophat2file(self, refseq, gtf):
+        '''if you have gtf or gtf, you'd better provide it.'''
+        abspathrefseq = os.path.abspath(refseq)
+        abspathgtf = os.path.abspath(gtf)
+        outdirname = '.'.join(abspathrefseq.split('.')[0:-1])
         L = range(0, len(self.namelist), 2)
         for i in L:
             self.arg1.append(self.namelist[i])
             self.arg2.append(self.namelist[i+1])
         f0 = open('run_tophat2.sh', 'w')
         for x, y in zip(self.arg1, self.arg2):
-            f0.write('tophat2 -p 64 -G Osativa_204.gtf --max-intron-length \
-15000 --mate-inner-dist 50 --mate-std-dev 50 -o . ./Osativa_204 ' + \
-x + ' '+ y + '\n')
+            cmd = 'tophat2 -p 5 -G %s --max-intron-length \
+15000 --mate-inner-dist 50 --mate-std-dev 50 -o . %s %s %s \n'\
+%(abspathgtf,outdirname, x, y)
+            f0.write(cmd)
             bamname = '_'.join(x.split('_')[:-1]) + '.bam'
             f0.write('mv ./accepted_hits.bam ' + bamname + '\n')
             f0.write('rm ./unmapped.bam\n')
@@ -248,18 +237,21 @@ x + ' '+ y + '\n')
             self.arg1.append(i)
         f0 = open('run_bai.txt', 'w')
         for x in self.arg1:
-            f0.write('samtools index ' + x + '\n')
+            cmd = 'samtools index %s'%x
+            f0.write(cmd + '\n')
         f0.close()
         call('parallel < run_bai.txt', shell = True)
 
-    def runorderfile(self):
+    def runorderfile(self, refseq):
+        '''let the bam and refseq have same seqname order'''
         for i in self.namelist:
             self.arg1.append(i)
             self.arg2.append(i.split('.')[0] + '.ordered.bam')
         f0 = open('run_order.txt', 'w')
         for x, y in zip(self.arg1, self.arg2):
-            f0.write('java -jar /share/Public/cmiao/picard-tools-1.112/\
-ReorderSam.jar ' + 'I=' + x + ' O=' + y + ' ' + 'REFERENCE=link1.fa\n')
+            cmd = 'java -jar /share/Public/cmiao/picard-tools-1.112/\
+ReorderSam.jar I=%s O=%s REFERENCE=%s \n'%(x, y, refseq)
+            f0.write(cmd)
         f0.close()
         call('parallel < run_order.txt', shell = True)
 
@@ -272,15 +264,16 @@ ReorderSam.jar ' + 'I=' + x + ' O=' + y + ' ' + 'REFERENCE=link1.fa\n')
                 self.namelist.append(fn)
                 self.namelist.sort()
 
-    def runsplitNtrimfile(self):
+    def runsplitNtrimfile(self, refseq):
         for i in self.namelist:
             self.arg1.append(i)
             self.arg2.append(i.split('.')[0] + '.Nsplited.ready.bam')
         f0 = open('run_splitN.txt', 'w')
         for x, y in zip(self.arg1, self.arg2):
-            f0.write('java -jar /share/Public/cmiao/GATK_tools/\
-GenomeAnalysisTK.jar -T SplitNCigarReads -I ' + x + \
-' -U ALLOW_N_CIGAR_READS' +' -o ' + y + ' -R link1.fa\n')
+            cmd = 'java -jar /share/Public/cmiao/GATK_tools/\
+GenomeAnalysisTK.jar -T SplitNCigarReads -I %s -U ALLOW_N_CIGAR_READS \
+-o %s -R %s \n'%(x, y, refseq)
+            f0.write(cmd)
         f0.close()
         call('parallel < run_splitN.txt', shell = True)
 
@@ -289,7 +282,7 @@ GenomeAnalysisTK.jar -T SplitNCigarReads -I ' + x + \
             seg = fn.split('.')
             temp = os.path.join(self.dirname, fn)
             if (os.path.isfile(temp)
-                and seg[1:] == ['Nsplited', 'ready', 'bam']):
+                and 'ready' in seg and 'bai' not in seg):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
