@@ -177,7 +177,7 @@ building..."
         for fn in self.allnamelist:
             temp = os.path.join(self.dirname, fn)
             if (os.path.isfile(temp) and fn.split('.')[-1] == 'bam'
-                and not set(['sorted', 'rmp', 'rg', 'reorder','splitN']) & set(fn.split('.')) ):
+                and not set(['unmap','sorted', 'rmp', 'rg', 'reorder','splitN']) & set(fn.split('.')) ):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
@@ -208,7 +208,7 @@ building..."
             self.arg2.append(i.split('.')[0] + '.rmp.bam')
         f0 = open('run_rmp.txt', 'w')
         for x, y in zip(self.arg1, self.arg2):
-            f0.write('samtools0.1.18 rmdup ' + x + ' ' + y + '\n')
+            f0.write('samtools_0.1.18 rmdup ' + x + ' ' + y + '\n')
         f0.close()
         call('parallel < run_rmp.txt', shell = True)
 
@@ -216,7 +216,7 @@ building..."
         for fn in self.allnamelist:
             temp = os.path.join(self.dirname, fn)
             if (os.path.isfile(temp)
-                and '.'.join(fn.split('.')[-2:]) == 'rmp.bam'
+                and '.'.join(fn.split('.')[-2:]) == 'rmp.bam'):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
@@ -224,7 +224,7 @@ building..."
         f0 = open('run_addrg.txt', 'w')
         for i in self.namelist:
             self.arg1.append(i)
-            rg_name = i.split('.')[0][1:]
+            rg_name = i.split('_')[0]
             self.arg2.append(rg_name)
             self.arg3.append(i.split('.')[0] + '.rmp.rg.bam')
         for x, z, y in zip(self.arg1, self.arg2, self.arg3):
@@ -237,7 +237,7 @@ building..."
             seg = fn.split('.')
             temp = os.path.join(self.dirname, fn)
             if (os.path.isfile(temp)
-                and '.'.join(fn.split('.')[-3:]) == 'rmp.rg.bam'
+                and '.'.join(fn.split('.')[-3:]) == 'rmp.rg.bam'):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
@@ -265,7 +265,7 @@ building..."
         '''let the bam and refseq have same seqname order'''
         for i in self.namelist:
             self.arg1.append(i)
-            self.arg2.append(i.split('.')[0] + 'rmp.rg.reorder.bam')
+            self.arg2.append(i.split('.')[0] + '.rmp.rg.reorder.bam')
         f0 = open('run_order.txt', 'w')
         for x, y in zip(self.arg1, self.arg2):
             cmd = 'java -jar /share/Public/cmiao/picard-tools-1.112/\
@@ -279,18 +279,18 @@ ReorderSam.jar I=%s O=%s REFERENCE=%s \n'%(x, y, refseq)
             seg = fn.split('.')
             temp = os.path.join(self.dirname, fn)
             if (os.path.isfile(temp)
-                and '.'.join(fn.split('.')[-4:]) == 'rmp.rg.reorder.bam'
+                and '.'.join(fn.split('.')[-4:]) == 'rmp.rg.reorder.bam'):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
     def runsplitNfile(self, refseq):
         for i in self.namelist:
             self.arg1.append(i)
-            self.arg2.append(i.split('.')[0] + 'rmp.rg.reorder.splitN.bam')
+            self.arg2.append(i.split('.')[0] + '.rmp.rg.reorder.splitN.bam')
         f0 = open('run_splitN.txt', 'w')
         for x, y in zip(self.arg1, self.arg2):
             cmd = 'java -jar /share/bioinfo/miaochenyong/ASE-PROJECT/GenomeAnalysisTK.jar \
--T SplitNCigarReadsjava -I %s -U -o %s -R %s \n'%(x, y, refseq)
+-T SplitNCigarReads -I %s -U ALLOW_N_CIGAR_READS -o %s -R %s \n'%(x, y, refseq)
             f0.write(cmd)
         f0.close()
         call('parallel < run_splitN.txt', shell = True)
@@ -300,7 +300,7 @@ ReorderSam.jar I=%s O=%s REFERENCE=%s \n'%(x, y, refseq)
             seg = fn.split('.')
             temp = os.path.join(self.dirname, fn)
             if (os.path.isfile(temp)
-                and '.'.join(fn.split('.')[-5:]) == 'rmp.rg.reorder.splitN.bam'
+                and '.'.join(fn.split('.')[-5:]) == 'rmp.rg.reorder.splitN.bam'):
                 self.namelist.append(fn)
                 self.namelist.sort()
 
