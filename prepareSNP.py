@@ -19,7 +19,7 @@ L006: lane?
 optparser = OptionParser(usage = msg_usage, description = descr)
 optparser.add_option('-D', '--data', dest = 'dataformat',
                      help = 'point the data you have at present.\
-                     fqgz? fq? sam? bam? rg? orderedbam?')
+                     fqgz? fq? sam? bam? rg? orderbam?')
 optparser.add_option('-T', '--type', dest = 'datatype',
                      help = 'your data is DNA or RNA ?')
 optparser.add_option('-R', '--reference', dest = 'reference',
@@ -161,15 +161,8 @@ def pre_RNA_fqgz(refseq, gtf):
     step2.getbamfilelist()
     print 'your bam file list: %s'%step2.namelist
     print 'total %s files.'%len(step2.namelist)
-    print 'next step: sort your bam files.'
-    step2.runsortfile()
-
-    step3 = FreebayesPipe('.')
-    step3.getsortfilelist()
-    print 'your sorted bam files list: %s'%step3.namelist
-    print 'total %s files.'%len(step3.namelist)
-    print 'next step: remove duplicate.'
-    step3.runrmdupfile()
+    print 'next step: remove duplicate reads in  your bam files.'
+    step2.runrmdupfile()
 
     step4 = FreebayesPipe('.')
     step4.getrmpfilelist()
@@ -186,35 +179,28 @@ def pre_RNA_fqgz(refseq, gtf):
     step5.runorderfile(refseq)
 
     step6 = FreebayesPipe('.')
-    step6.getorderedfilelist()
-    print 'your ordered bam files list: %s'%step6.namelist
+    step6.getorderfilelist()
+    print 'your order bam files list: %s'%step6.namelist
     print 'total %s files.'%len(step6.namelist)
     step6.runbaifile()
     print 'next step: split N cigar'
-    step6.runsplitNtrimfile(refseq)
+    step6.runsplitNfile(refseq)
 
-    step7 = FreebayesPipe()
-    step7.getreadyfilelist()
-    print 'your splited N cigar files list: %s'%step7.namelist
-    print 'total %s files.'%len(step7.namelist)
-    print 'the next step: index your files used to call snp'
-    step7.runbaifile()
-    print 'done~'
+#    step7 = FreebayesPipe()
+#    step7.getreadyfilelist()
+#    print 'your splited N cigar files list: %s'%step7.namelist
+#    print 'total %s files.'%len(step7.namelist)
+#    print 'the next step: index your files used to call snp'
+#    step7.runbaifile()
+#    print 'done~'
 
 def pre_RNA_bam(refseq):
     step2 = FreebayesPipe('.')
     step2.getbamfilelist()
     print 'your bam file list: %s'%step2.namelist
     print 'total %s files.'%len(step2.namelist)
-    print 'next step: sort your bam files.'
-    step2.runsortfile()
-
-    step3 = FreebayesPipe('.')
-    step3.getsortfilelist()
-    print 'your sorted bam files list: %s'%step3.namelist
-    print 'total %s files.'%len(step3.namelist)
     print 'next step: remove duplicate.'
-    step3.runrmdupfile()
+    step2.runrmdupfile()
 
     step4 = FreebayesPipe('.')
     step4.getrmpfilelist()
@@ -231,12 +217,12 @@ def pre_RNA_bam(refseq):
     step5.runorderfile(refseq)
 
     step6 = FreebayesPipe('.')
-    step6.getorderedfilelist()
-    print 'your ordered bam files list: %s'%step6.namelist
+    step6.getorderfilelist()
+    print 'your order bam files list: %s'%step6.namelist
     print 'total %s files.'%len(step6.namelist)
     step6.runbaifile()
     print 'next step: split N cigar'
-    step6.runsplitNtrimfile(refseq)
+    step6.runsplitNfile(refseq)
 
     step7 = FreebayesPipe()
     step7.getreadyfilelist()
@@ -269,12 +255,12 @@ def pre_RNA_sortedbam(refseq):
     step5.runorderfile(refseq)
 
     step6 = FreebayesPipe('.')
-    step6.getorderedfilelist()
-    print 'your ordered bam files list: %s'%step6.namelist
+    step6.getorderfilelist()
+    print 'your order bam files list: %s'%step6.namelist
     print 'total %s files.'%len(step6.namelist)
     step6.runbaifile()
     print 'next step: split N cigar'
-    step6.runsplitNtrimfile(refseq)
+    step6.runsplitNfile(refseq)
 
     step7 = FreebayesPipe()
     step7.getreadyfilelist()
@@ -294,12 +280,12 @@ def pre_RNA_rg_bam(refseq):
     step5.runorderfile(refseq)
 
     step6 = FreebayesPipe('.')
-    step6.getorderedfilelist()
-    print 'your ordered bam files list: %s'%step6.namelist
+    step6.getorderfilelist()
+    print 'your order bam files list: %s'%step6.namelist
     print 'total %s files.'%len(step6.namelist)
     step6.runbaifile()
     print 'next step: split N cigar'
-    step6.runsplitNtrimfile(refseq)
+    step6.runsplitNfile(refseq)
 
     step7 = FreebayesPipe()
     step7.getreadyfilelist()
@@ -309,14 +295,14 @@ def pre_RNA_rg_bam(refseq):
     step7.runbaifile()
     print 'done~'
 
-def pre_RNA_ordered_bam(refseq):
+def pre_RNA_order_bam(refseq):
     step6 = FreebayesPipe('.')
-    step6.getorderedfilelist()
-    print 'your ordered bam files list: %s'%step6.namelist
+    step6.getorderfilelist()
+    print 'your order bam files list: %s'%step6.namelist
     print 'total %s files.'%len(step6.namelist)
     step6.runbaifile()
     print 'next step: split N cigar'
-    step6.runsplitNtrimfile(refseq)
+    step6.runsplitNfile(refseq)
 
     step7 = FreebayesPipe()
     step7.getreadyfilelist()
@@ -346,7 +332,7 @@ if __name__ == '__main__':
     elif T == 'DNA' and D == 'fq':
         pre_DNA_fq(R)
     elif T == 'DNA' and D == 'sam':
-        pre_DNA_sam(R)
+        pre_DNA_sam()
     elif T == 'DNA' and D == 'bam':
         pre_DNA_bam()
     elif T == 'DNA' and D == 'sortedbam':
@@ -361,8 +347,8 @@ if __name__ == '__main__':
         pre_RNA_sortedbam(R)
     elif T == 'RNA' and D == 'rgbam':
         pre_RNA_rg_bam(R)
-    elif T == 'RNA' and D == 'orderedbam':
-        pre_RNA_ordered_bam(R)
+    elif T == 'RNA' and D == 'orderbam':
+        pre_RNA_order_bam(R)
     elif T == 'RNA' and D == 'Nsplitedbam':
         pre_RNA_Nsplited_bam()
     else:
