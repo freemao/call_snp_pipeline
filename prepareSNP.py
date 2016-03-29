@@ -186,13 +186,13 @@ def pre_RNA_fqgz(refseq, gtf):
     print 'next step: split N cigar'
     step6.runsplitNfile(refseq)
 
-#    step7 = FreebayesPipe()
-#    step7.getreadyfilelist()
-#    print 'your splited N cigar files list: %s'%step7.namelist
-#    print 'total %s files.'%len(step7.namelist)
-#    print 'the next step: index your files used to call snp'
-#    step7.runbaifile()
-#    print 'done~'
+    step7 = FreebayesPipe()
+    step7.getreadyfilelist()
+    print 'your splited N cigar files list: %s'%step7.namelist
+    print 'total %s files.'%len(step7.namelist)
+    print 'the next step: index your files used to call snp'
+    step7.runbaifile()
+    print 'done~'
 
 def pre_RNA_bam(refseq):
     step2 = FreebayesPipe('.')
