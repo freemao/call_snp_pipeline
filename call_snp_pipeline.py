@@ -143,17 +143,27 @@ building..."
             self.arg1.append(self.namelist[i])
             self.arg2.append(self.namelist[i+1])
         f0 = open('run_tophat2.sh', 'w')
+        f1 = open('makeLink.txt', 'w')
         for x, y in zip(self.arg1, self.arg2):
-            cmd = 'tophat2 -g 1 -o . -p 40 --no-discordant -G %s \
--r 100 --mate-std-dev 50  %s %s %s \n'%(abspathgtf,faIdxName, x, y)
-            f0.write(cmd)
+            oDir = x.split('_')[0]
+            abspathoDir = os.path.abspath(oDir)
+            abspathx = os.path.abspath(x)
+            abspathy = os.path.abspath(y)
+            cmd1 = 'tophat -g 1 -o %s -p 21 --no-discordant -G %s \
+-r 100 --mate-std-dev 50  %s %s %s \n'%(abspathoDir, abspathgtf,faIdxName,
+abspathx, abspathy)
             bamname = '_'.join(x.split('_')[:-1]) + '.bam'
             unmapedBamName = '_'.join(x.split('_')[:-1]) + '.unmap.bam'
-            f0.write('mv ./accepted_hits.bam ' + bamname + '\n')
-            f0.write('mv ./unmapped.bam ' + unmapedBamName + '\n')
+            cmd2 = 'ln -s %s/accepted_hits.bam %s'%(abspathoDir,bamname)
+            cmd3 = 'ln -s %s/unmapped.bam %s'%(abspathoDir,unmapedBamName)
+            f0.write(cmd1)
+            f1.write(cmd2+'\n'+cmd3)
         f0.close()
-        call('chmod 777 run_tophat2.sh', shell = True)
-        call('./run_tophat2.sh', shell = True)
+        f1.close()
+#        call('chmod 777 run_tophat2.sh', shell = True)
+        call('chmod 777 makeLink.txt', shell = True)
+        call('parallel -j 3 < run_tophat2.sh', shell = True)
+        call('./makeLink.txt', shell = True)
 
     def getsamfilelist(self):
         for fn in self.allnamelist:
